@@ -5,16 +5,14 @@ Flood fill from "Important" rooms to ensure no direct paths to exit.
 
 */
 
-// var imgWall = "██";
 var imgWall = "⬛";
 
-// var imgBlank = "  ";
 var imgBlank = "⬜";
 
-// var imgDoor = "[]";
 var imgDoor = "🚪";
 
 function displayDungeon(dungeon){	
+	// creates strings that use emojis to depict the dungeon layout 
 	for (var i = 0; i < dungeon.length; i++){
 		var asciiDung = "";
 		for (var j = 0; j < dungeon[i].length; j++){
@@ -23,18 +21,9 @@ function displayDungeon(dungeon){
 				thisCellFill = imgBlank;
 			} else if (dungeon[i][j] == 0){
 				thisCellFill = imgWall;
-			// 	// thisCellFill = "WW";
-			// } else if (dungeon[i][j] == -1 ){
-			// 	// thisCellFill= "▒▒";
-			// 	thisCellFill = "  ";
-			// } else if (dungeon[i][j] == -2 ){
-			// 	thisCellFill= "[]";
-			// } else if (dungeon[i][j] == -3 ){
-			// 	thisCellFill= "░░";
 			} else if (dungeon[i][j] == "D"){
 				thisCellFill = imgDoor;
 			} else {
-				// thisCellFill = "" + (dungeon[i][j]-1) + (dungeon[i][j]-1);
 				thisCellFill = "" + (dungeon[i][j]-1) +"⃣";
 			}
 			asciiDung += (thisCellFill);
@@ -52,6 +41,8 @@ function randInt(mn,mx){
 function connectRooms(dungeon, roomList){
 	roomList = shuffle(roomList);
 	var roomNum = 2;
+
+	//expands the size of a given room (up to one unit in each direction)
 	function expandRoom(rm){
 		let xMin = randInt(-1,0);
 		let xMax = randInt(1,2);
@@ -64,6 +55,8 @@ function connectRooms(dungeon, roomList){
 		}
 		roomNum++;
 	}
+	
+	// Attaches each room to the next in the list by way of a hallway
 	for (var i = 0; i < roomList.length-1; i++){
 		var thisRoom = roomList[i];
 		var partnerRoom = roomList[i+1];
@@ -71,6 +64,7 @@ function connectRooms(dungeon, roomList){
 		var x2 = partnerRoom.x;
 		var y1 = thisRoom.y;
 		var y2 = partnerRoom.y;
+		// in order for the for loop to work the x vals need to be sorted sm to lg
 		if (x1 > x2){
 			let tmpX = x1;
 			x1 = x2;
@@ -80,6 +74,8 @@ function connectRooms(dungeon, roomList){
 		for (var m = x1; m <= x2; m++){
 			dungeon[m][y2] = cellFill;
 		}
+		// in order for the for loop to work the x vals need to be sorted sm to lg
+		// AND the x vals need to be reset
 		if (y1 > y2){
 			let tmpY = y1;
 			y1 = y2;
@@ -245,15 +241,14 @@ function main(){
 			}
 		}
 	}
+	
 	dungeon = connectRooms(dungeon, roomList);
-
-	// console.log(dungeon);
 	dungeon = addDoors(dungeon);
 
 	displayDungeon(dungeon);
-
 	createNameList(roomList.length);
 
+	// TODO: make it tweet this shit
 }
 
 var second = 1000;
@@ -262,4 +257,4 @@ var hour = minute * 60;
 var day = hour * 24;
 
 main();
-setInterval(main,minute);
+setInterval(main,minute); // creates a new one every minute
