@@ -5,11 +5,80 @@ Flood fill from "Important" rooms to ensure no direct paths to exit.
 
 */
 
+var Twit = require('twit')
+ 
+var T = new Twit({
+  consumer_key:         'N13WiJKUKOIDXVnefYTOT78lW',
+  consumer_secret:      '8ax5WbnibSFF6QsOLL571fEWmduzWmWd5JZuuAj9ClOix9C8Ar',
+  access_token:         '959841386198654981-TenxbBXZZjLlEItXHWm7EIeJ4hIkJbY',
+  access_token_secret:  'mokHrsC6VOFDB7H17fOqCSywvVWAjTpHhCl79fHhNaOn8',
+  timeout_ms:           60*1000,  // optional HTTP request timeout to apply to all requests.
+  strictSSL:            true,     // optional - requires SSL certificates to be valid.
+})
+
+var overallDescriptions = [
+	"Arched Brick Tunnels"
+	,"Natural Caves"
+	,"Rough Block Tunnels"
+	,"Finely Crafted Stonework Tunnels"
+	,"High Vaulted Chambers"
+	,"Low Ceilinged Tunnels"
+	,"Damp Earthy Tunnels"
+	,"Geometrically Perfect Tunnels"
+	,"Crumbling Ancient Tunnels"
+]
+
+var roomList = [
+	"Barracks"
+	,"Guard Room"
+	,"Lavatory"
+	,"Well"
+	,"Animal Pens"
+	,"Altar"
+	,"Lab"
+	,"Training Room"
+	,"Kitchens"
+	,"Stalagmites"
+	,"Natural Spring"
+	,"Treasure Room"
+	,"Animal Den"
+	,"Entrance to Underdark"
+	,"Ceremonial Chamber"
+	,"Mess Hall"
+	,"Prison Cells"
+	,"Crystal Caverns"
+	,"Armoury"
+	,'Mushroom Farm'
+];
+
+var goodRooms = [
+	"Scriptorium"
+	,"Music Hall"
+	,"Temple"
+	,"Knitting Room"
+	,"Fitting Room"
+	,"Sitting Room"
+	,"Infirmary"
+];
+var badRooms = [
+	"Blood Pools"
+	,"Sacrificial Pit"
+	,"Torture Chamber"
+	,"Zombie Pens"
+	,"War Room"
+];
+
+// var imgWall = "██";
 var imgWall = "⬛";
 
+// var imgBlank = "  ";
 var imgBlank = "⬜";
 
+// var imgDoor = "[]";
 var imgDoor = "🚪";
+
+// var imgSecret = "$$";
+var imgSecret = "◾";
 
 function displayDungeon(dungeon){	
 	// creates strings that use emojis to depict the dungeon layout 
@@ -22,14 +91,47 @@ function displayDungeon(dungeon){
 			} else if (dungeon[i][j] == 0){
 				thisCellFill = imgWall;
 			} else if (dungeon[i][j] == "D"){
-				thisCellFill = imgDoor;
+				thisCellFill = aRand([imgDoor,imgSecret]);
 			} else {
+				// thisCellFill = "" + (dungeon[i][j]-1) + (dungeon[i][j]-1);
 				thisCellFill = "" + (dungeon[i][j]-1) +"⃣";
 			}
 			asciiDung += (thisCellFill);
 		}
 		console.log(asciiDung);
 	}
+}
+
+function twtDungeon(dungeon, num){	
+	// creates strings that use emojis to depict the dungeon layout 
+	var id_str;
+	var asciiDung = "";	
+	for (var i = 0; i < dungeon.length; i++){
+		for (var j = 0; j < dungeon[i].length; j++){
+			var thisCellFill = "";
+			if (dungeon[i][j] == 1){
+				thisCellFill = imgBlank;
+			} else if (dungeon[i][j] == 0){
+				thisCellFill = imgWall;
+			} else if (dungeon[i][j] == "D"){
+				thisCellFill = aRand([imgDoor,imgSecret]);
+			} else {
+				// thisCellFill = "" + (dungeon[i][j]-1) + (dungeon[i][j]-1);
+				thisCellFill = "" + (dungeon[i][j]-1) +"⃣";
+			}
+			asciiDung += (thisCellFill);
+		}
+		asciiDung += "\n";
+	}
+	T.post('statuses/update', { status: asciiDung }, function(err, data, response) {
+	  console.log(data);
+	  id = data.id_str;
+	  twtNameList(id,num);
+	})
+}
+
+function aRand(arr){
+	return arr[Math.floor(Math.random()*arr.length)];
 }
 
 function randInt(mn,mx){
@@ -140,57 +242,48 @@ function shuffle(a) {
 }
 
 function createNameList(num){
-	var overallDescriptions = [
-		"Arched Brick Tunnels"
-		,"Natural Caves"
-		,"Rough Block Tunnels"
-		,"Finely Crafted Stonework Tunnels"
-		,"High Vaulted Chambers"
-		,"Low Ceilinged Tunnels"
-		,"Damp Earthy Tunnels"
-		,"Geometrically Perfect Tunnels"
-		,"Crumbling Ancient Tunnels"
-	]
 
 	var whichOverall = overallDescriptions[Math.floor(Math.random()*overallDescriptions.length)];
 	console.log("General Aesthetic: " + whichOverall);
 
-	var roomList = [
-		"Barracks"
-		,"Guard Room"
-		,"War Room"
-		,"Shitting Room"
-		,"Well"
-		,"Animal Pens"
-		,"Zombie Pens"
-		,"Altar"
-		,"Scriptorium"
-		,"Lab"
-		,"Training Room"
-		,"Torture Chamber"
-		,"Fitting Room"
-		,"Knitting Room"
-		,"Sitting Room"
-		,"Kitchens"
-		,"Stalagmites"
-		,"Natural Spring"
-		,"Sacrificial Pit"
-		,"Treasure Room"
-		,"Animal Den"
-		,"Entrance to Underdark"
-		,"Blood Pools"
-		,"Ceremonial Chamber"
-		,"Music Hall"
-		,"Mess Hall"
-		,"Prison Cells"
-		,"Crystal Caverns"
-		,"Temple"
-		,"Armoury"
-	];
+	let rnd = Math.random();
+	if (rnd < .4){
+		roomList = roomList.concat(goodRooms);
+	} else if (rnd >= 0.4 && rnd < 0.8){
+		roomList = roomList.concat(badRooms);
+	} else {
+		roomList = roomList.concat(goodRooms);
+		roomList = roomList.concat(badRooms);
+	}
+
 	roomList = shuffle(roomList);
 	for (let i = 0; i < Math.min(num,9); i ++){
 		console.log((i+1) + ": " + roomList[i]);
 	}
+}
+
+function twtNameList(id, num){
+	var status = "";
+	var whichOverall = overallDescriptions[Math.floor(Math.random()*overallDescriptions.length)];
+	status += "General Aesthetic: " + whichOverall + "\n";
+
+	let rnd = Math.random();
+	if (rnd < .4){
+		roomList = roomList.concat(goodRooms);
+	} else if (rnd >= 0.4 && rnd < 0.8){
+		roomList = roomList.concat(badRooms);
+	} else {
+		roomList = roomList.concat(goodRooms);
+		roomList = roomList.concat(badRooms);
+	}
+
+	roomList = shuffle(roomList);
+	for (let i = 0; i < Math.min(num,9); i ++){
+		status += ((i+1) + ": " + roomList[i]) + "\n";
+	}
+	T.post('statuses/update', { in_reply_to_status_id: id, status: status }, function(err, data, response) {
+		// console.log(response);
+	})
 }
 
 function addDoors(dun){
@@ -217,9 +310,95 @@ function addDoors(dun){
 	return dun;
 }
 
+function doorFill(dun){
+	var x = 0; 
+	var y = 0;
+	while (dun[x][y] == 0){
+		x = randInt(0,dun.length-1);
+		y = randInt(0,dun.length-1);
+	}
+	dun = floodFill(dun,x,y,"D");
+	return dun;
+}
+
+function floodFill(dun,x,y,replacement){
+	if (dun[x][y] != 0 && dun[x][y] != replacement){
+		dun[x][y] = replacement;
+		if (x>0){
+			dun = floodFill(dun,x-1,y,replacement);
+		}
+		if (x<dun.length-1){
+			dun = floodFill(dun,x+1,y,replacement);
+		}
+		if (y>0){
+			dun = floodFill(dun,x,y-1,replacement);
+		}
+		if (y<dun.length-1){
+			dun = floodFill(dun,x,y+1,replacement);
+		}
+	}
+	return dun;
+}
+
+function trimDungeon(dun){
+	// trim top
+	var finished = false
+	while (!finished){
+		for (var i = 0; i < dun[1].length; i++){
+			if (dun[1][i] != 0){
+				finished = true;
+			}
+		}
+		if (!finished){
+			dun.splice(0,1);
+		}
+	}
+	// trim bottom
+	finished = false
+	while (!finished){
+		for (var i = 0; i < dun[dun.length-2].length; i++){
+			if (dun[dun.length-2][i] != 0){
+				finished = true;
+			}
+		}
+		if (!finished){
+			dun.splice(dun.length-1,1);
+		}
+	}
+	// trim left
+	finished = false
+	while (!finished){
+		for (var i = 0; i < dun.length-1; i++){
+			if (dun[i][1] != 0){
+				finished = true;
+			}
+		}
+		if (!finished){
+			for (var i = 0; i< dun.length; i++){
+				dun[i].splice(0,1);
+			}
+		}
+	}
+	// trim right
+	finished = false
+	while (!finished){
+		for (var i = 0; i < dun.length-1; i++){
+			if (dun[i][dun[i].length-2] != 0){
+				finished = true;
+			}
+		}
+		if (!finished){
+			for (var i = 0; i< dun.length; i++){
+				dun[i].splice(dun[i].length-1,1);
+			}
+		}
+	}
+	return dun;
+}
+
 function main(){
 
-	var dungeonsize = Math.floor(Math.random()*6)+8;
+	var dungeonsize = Math.floor(Math.random()*3)+8;
 	var dungeon = [];
 	var roomList = [];
 	for (var i = 0; i < dungeonsize; i++){
@@ -244,11 +423,12 @@ function main(){
 	
 	dungeon = connectRooms(dungeon, roomList);
 	dungeon = addDoors(dungeon);
+	dungeon = trimDungeon(dungeon);
 
 	displayDungeon(dungeon);
-	createNameList(roomList.length);
+	twtDungeon(dungeon,roomList.length);
+	// createNameList(roomList.length);
 
-	// TODO: make it tweet this shit
 }
 
 var second = 1000;
@@ -257,4 +437,4 @@ var hour = minute * 60;
 var day = hour * 24;
 
 main();
-setInterval(main,minute); // creates a new one every minute
+setInterval(main,hour * 6); // creates a new one every minute
